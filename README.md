@@ -1,5 +1,5 @@
 # LLVM - Assignments 
-Repository contenenti tutti gli assignments ricevuti e svolti duranti il corso di "Linguaggi e Compilatori" 2023-2024.
+Repository contenenti tutti gli assignments ricevuti e svolti durante il corso di "Linguaggi e Compilatori" 2023-2024.
 
 ## Bacheca aggiornamenti
 ### Assignments 1:
