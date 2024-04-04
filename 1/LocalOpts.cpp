@@ -211,20 +211,70 @@ bool runOnBasicBlockAdv(BasicBlock &B) {
 
               }
             }
-
         }
     }
     return true;
 }
 
+bool runOnMultiInstruction(BasicBlock &B) {
+  for (auto &I : B) {
+    std::string opc1 = I.getOpcodeName();
+    if (opc1 == "add" || opc1 == "sub") {
+      bool swp = false;
+      ConstantInt *imm1 = nullptr;
+
+      if (ConstantInt *secOp = dyn_cast<ConstantInt>(I.getOperand(1))) {
+        imm1 = secOp;
+      }
+      else if (ConstantInt *firOp = dyn_cast<ConstantInt>(I.getOperand(0))) {
+          imm1 = firOp;
+          swp = true;
+      }
+
+      if (imm1 != nullptr) {
+        for (auto iter_U = I.user_begin(); iter_U != I.user_end(); ++iter_U) {
+          Instruction *U = dyn_cast<Instruction>(*iter_U);
+          std::string opc2 = U->getOpcodeName();
+          if (opc2 == "add" || opc2 == "sub") {
+
+            ConstantInt *imm2 = nullptr;
+
+            if (ConstantInt *secOp = dyn_cast<ConstantInt>(U->getOperand(1))) {
+              imm2 = secOp;
+            }
+            else if (ConstantInt *firOp = dyn_cast<ConstantInt>(U->getOperand(0))) {
+              imm2 = firOp;
+            }
+
+            if (imm2) {
+              if (imm1 == imm2 && opc1 != opc2) {
+
+                if(swp) {
+                  U->replaceAllUsesWith(I.getOperand(1));
+                }
+                else {
+                  U->replaceAllUsesWith(I.getOperand(0));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return true;
+}
 
 bool runOnFunction(Function &F) {
   bool Transformed = false;
 
   for (auto Iter = F.begin(); Iter != F.end(); ++Iter) {
-    /*if (runOnAlgebraicIdentity(*Iter))
-      Transformed = true;*/
+    if (runOnAlgebraicIdentity(*Iter))
+      Transformed = true;
     if (runOnBasicBlockAdv(*Iter)) {
+      Transformed = true;
+    }
+    if (runOnMultiInstruction(*Iter)) {
       Transformed = true;
     }
     /*if (runOnBasicBlock(*Iter)) {
