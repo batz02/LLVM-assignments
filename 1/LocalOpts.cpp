@@ -15,10 +15,13 @@
 
 using namespace llvm;
 
+//svolto a lezione ma migliorato in runOnBasicBlockAdv
 bool runOnBasicBlock(BasicBlock &B) {
 
     for (auto &I : B) {
+
         if (Instruction::Mul == I.getOpcode()) {
+
             outs() << "Operazione: " << I << "\n";
 
             bool swp = false;
@@ -61,23 +64,28 @@ bool runOnBasicBlock(BasicBlock &B) {
     return true;
 }
 
+//funzione che implementa il riconoscimento delle Algebraic Identities
 bool runOnAlgebraicIdentity (BasicBlock &B) {
   bool status = false;
 
   for (auto &I : B) {
 
         if (Instruction::Add == I.getOpcode() || Instruction::Mul == I.getOpcode()) {
-          
+            
             ConstantInt *imm = nullptr;
 
             if (ConstantInt *secOp = dyn_cast<ConstantInt>(I.getOperand(1))) {
               if (secOp->getValue().isZero() && Instruction::Add == I.getOpcode()) {
                 imm = secOp;
+                outs() << "[runOnAlgebraicIdentity]: "<< I.getOpcodeName() << " ->"<< I << "\n";
+                outs() << "Identità risolta su "<< I.getOpcodeName() << " con x in prima posizione" << "\n";
                 I.replaceAllUsesWith(I.getOperand(0));
                 status = true;
               }
               else if (secOp->getValue().isOne() && Instruction::Mul == I.getOpcode()) {
                 imm = secOp;
+                outs() << "[runOnAlgebraicIdentity]: "<< I.getOpcodeName() << " ->"<< I << "\n";
+                outs() << "Identità risolta su "<< I.getOpcodeName() << " con x in prima posizione" << "\n";
                 I.replaceAllUsesWith(I.getOperand(0));
                 status = true;
               }
@@ -87,11 +95,15 @@ bool runOnAlgebraicIdentity (BasicBlock &B) {
               if (ConstantInt *firOp = dyn_cast<ConstantInt>(I.getOperand(0))) {
                 if (firOp->getValue().isZero() && Instruction::Add == I.getOpcode()) {
                     imm = firOp;
+                    outs() << "[runOnAlgebraicIdentity]: "<< I.getOpcodeName() << " ->"<< I << "\n";
+                    outs() << "Identità risolta su "<< I.getOpcodeName() << " con x in seconda posizione" << "\n";
                     I.replaceAllUsesWith(I.getOperand(1));
                     status = true;
                 } 
                 else if (firOp->getValue().isOne() && Instruction::Mul == I.getOpcode()) {
                   imm = firOp;
+                  outs() << "[runOnAlgebraicIdentity]: "<< I.getOpcodeName() << " ->"<< I << "\n";
+                  outs() << "Identità risolta su "<< I.getOpcodeName() << " con x in seconda posizione" << "\n";
                   I.replaceAllUsesWith(I.getOperand(1));
                   status = true;
                 }
@@ -101,14 +113,14 @@ bool runOnAlgebraicIdentity (BasicBlock &B) {
   }
   if (!status)
     outs()<< "Nessuna identità trovata \n";
+  outs()<< "[runOnAlgebraicIdentity] terminata \n\n";
   return status;
 }
 
+//funzione che implementa l'advanced strength reduction 
 bool runOnBasicBlockAdv(BasicBlock &B) {
-
     for (auto &I : B) {
         if (Instruction::Mul == I.getOpcode()) {
-            outs() << "Operazione: " << I << "\n";
 
             bool swp = false;
             ConstantInt *imm = nullptr;
@@ -120,15 +132,15 @@ bool runOnBasicBlockAdv(BasicBlock &B) {
                 imm = firOp;
                 swp = true;
             }
-  
 
-            if (imm != nullptr) {
+            if (imm != nullptr && !imm->getValue().isOne()) {
 
               APInt val = imm->getValue();
               if (val.isPowerOf2()) {
 
                 ConstantInt *shiftOp = ConstantInt::get(imm->getType(), imm->getValue().exactLogBase2());
-                outs() << "Operando: " << imm->getValue() << "\n";
+                outs() << "[runOnBasicBlockAdv]: "<< I.getOpcodeName() << " ->"<< I << "\n";
+                outs() << "Immediato potenza di 2 -> shift x<<" << shiftOp->getValue() <<"\n";
 
                 Instruction *NewI_1;
 
@@ -143,7 +155,8 @@ bool runOnBasicBlockAdv(BasicBlock &B) {
               } else if ((val+1).isPowerOf2()) {
 
                 ConstantInt *shiftOp = ConstantInt::get(imm->getType(), imm->getValue().nearestLogBase2());
-                outs() << "Operando: " << imm->getValue() << "\n";
+                outs() << "[runOnBasicBlockAdv]: "<< I.getOpcodeName() << " ->"<< I << "\n";
+                outs() << "(immediato+1) potenza di 2 -> shift x<<" << shiftOp->getValue() <<" e aggiunta una sub \n";
 
                 Instruction *NewI_1;
                 Instruction *NewI_2;
@@ -162,7 +175,8 @@ bool runOnBasicBlockAdv(BasicBlock &B) {
             } else if ((val-1).isPowerOf2()) {
 
                 ConstantInt *shiftOp = ConstantInt::get(imm->getType(), imm->getValue().nearestLogBase2());
-                outs() << "Operando: " << imm->getValue() << "\n";
+                outs() << "[runOnBasicBlockAdv]: "<< I.getOpcodeName() << " ->"<< I << "\n";
+                outs() << "(immediato-1) potenza di 2 -> shift x<<" << shiftOp->getValue() <<" e aggiunta una add \n";
 
                 Instruction *NewI_1;
                 Instruction *NewI_2;
@@ -196,7 +210,8 @@ bool runOnBasicBlockAdv(BasicBlock &B) {
             if (imm != nullptr) {
               if (imm->getValue().isPowerOf2()) {
                 ConstantInt *shiftOp = ConstantInt::get(imm->getType(), imm->getValue().nearestLogBase2());
-                outs() << "Operando: " << imm->getValue() << "\n";
+                outs() << "[runOnBasicBlockAdv]: "<< I.getOpcodeName() << " ->"<< I << "\n";
+                outs() << "Immediato potenza di 2 -> shift x>>" << shiftOp->getValue() <<"\n";
 
                 Instruction *NewI_1;
 
@@ -213,13 +228,15 @@ bool runOnBasicBlockAdv(BasicBlock &B) {
             }
         }
     }
+    outs()<< "[runOnBasicBlockAdv] terminata \n\n";
     return true;
 }
 
+//funzione che implementa il miglioramento delle multi instruction
 bool runOnMultiInstruction(BasicBlock &B) {
   for (auto &I : B) {
-    std::string opc1 = I.getOpcodeName();
-    if (opc1 == "add" || opc1 == "sub") {
+    //std::string opc1 = I.getOpcodeName();
+    if (Instruction::Add == I.getOpcode() || Instruction::Sub == I.getOpcode()) {
       bool swp = false;
       ConstantInt *imm1 = nullptr;
 
@@ -234,8 +251,8 @@ bool runOnMultiInstruction(BasicBlock &B) {
       if (imm1 != nullptr) {
         for (auto iter_U = I.user_begin(); iter_U != I.user_end(); ++iter_U) {
           Instruction *U = dyn_cast<Instruction>(*iter_U);
-          std::string opc2 = U->getOpcodeName();
-          if (opc2 == "add" || opc2 == "sub") {
+          //std::string opc2 = U->getOpcodeName();
+          if (Instruction::Add == U->getOpcode() || Instruction::Sub == U->getOpcode()) {
 
             ConstantInt *imm2 = nullptr;
 
@@ -247,21 +264,26 @@ bool runOnMultiInstruction(BasicBlock &B) {
             }
 
             if (imm2) {
-              if (imm1 == imm2 && opc1 != opc2) {
-
+              if (imm1 == imm2 && I.getOpcode() != U->getOpcode()) {
+                outs() << "[runOnMultiInstruction]: "<< I.getOpcodeName() << " ->"<< I << "\n";
+                outs() << "[runOnMultiInstruction]: "<< U->getOpcodeName() << " ->"<< I << "\n";
                 if(swp) {
                   U->replaceAllUsesWith(I.getOperand(1));
                 }
                 else {
                   U->replaceAllUsesWith(I.getOperand(0));
                 }
+                outs() << "Multi Instruction trovata" << "\n" ;
               }
             }
+            else
+              outs() << "Multi Instruction non trovata" << "\n";
           }
         }
       }
     }
   }
+  outs()<< "[runOnMultiInstruction] terminata \n\n";
   return true;
 }
 
@@ -284,8 +306,7 @@ bool runOnFunction(Function &F) {
   return Transformed;
 }
 
-PreservedAnalyses LocalOpts::run(Module &M,
-                                      ModuleAnalysisManager &AM) {
+PreservedAnalyses LocalOpts::run(Module &M,ModuleAnalysisManager &AM) {
   for (auto Fiter = M.begin(); Fiter != M.end(); ++Fiter)
     if (runOnFunction(*Fiter))
       return PreservedAnalyses::none();
