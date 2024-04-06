@@ -1,5 +1,5 @@
 # LLVM - Assignments 
-Repository contenenti tutti gli assignments ricevuti e svolti durante il corso di "Linguaggi e Compilatori" 2023-2024.
+Repository contenenti tutti gli assignments ricevuti e svolti da Matteo Battilori, Samuel Di Marzo e Raimondo Iannone durante il corso di "Linguaggi e Compilatori" 2023-2024.
 
 ## Bacheca aggiornamenti
 ### Assignments 1:
