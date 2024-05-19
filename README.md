@@ -11,3 +11,7 @@ Repository contenenti tutti gli assignments ricevuti e svolti da Matteo Battilor
 ### Assignment 2:
 
 - 05/05/2024: Caricato lo svolgimento dell'assignment 2
+
+### Assignment 3:
+
+- 19/05/2024: Caricato lo svolgimento dell'assignment 3
